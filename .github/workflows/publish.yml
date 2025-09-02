@@ -1,0 +1,54 @@
+name: Release Go Module
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Prepare version
+        id: prep
+        run: |
+          VERSION="pkg/v${{ inputs.version }}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Release version: $VERSION"
+
+      - name: Validate version format
+        run: |
+          if [[ ! "$VERSION" =~ ^pkg/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: $VERSION (expected pkg/vMAJOR.MINOR.PATCH)"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Create tag
+        run: |
+          git tag $VERSION
+          git push origin $VERSION
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

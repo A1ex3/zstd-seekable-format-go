@@ -4,7 +4,7 @@
   },
   "gopls": {
     "formatting.gofumpt": true,
-    "formatting.local": "github.com/SaveTheRbtz/zstd-seekable-format-go",
+    "formatting.local": "github.com/a1ex3/zstd-seekable-format-go",
     "ui.completion.usePlaceholders": true,
     "ui.semanticTokens": true,
     "ui.codelenses": {

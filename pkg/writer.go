@@ -8,10 +8,9 @@ import (
 	"runtime"
 	"sync"
 
-	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/SaveTheRbtz/zstd-seekable-format-go/pkg/env"
+	"github.com/a1ex3/zstd-seekable-format-go/pkg/env"
 )
 
 var errWriterClosed = errors.New("writer is closed")
@@ -33,8 +32,7 @@ type writerImpl struct {
 	enc          ZSTDEncoder
 	frameEntries []seekTableEntry
 
-	logger *zap.Logger
-	env    env.WEnvironment
+	env env.WEnvironment
 
 	mu sync.Mutex
 }
@@ -82,7 +80,6 @@ func NewWriter(w io.Writer, encoder ZSTDEncoder, opts ...wOption) (ConcurrentWri
 		enc: encoder,
 	}
 
-	sw.logger = zap.NewNop()
 	for _, o := range opts {
 		err := o(&sw)
 		if err != nil {

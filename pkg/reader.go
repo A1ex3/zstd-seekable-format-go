@@ -7,13 +7,12 @@ import (
 	"io"
 	"math"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cespare/xxhash/v2"
 	"github.com/google/btree"
-	"go.uber.org/atomic"
-	"go.uber.org/zap"
 
-	"github.com/SaveTheRbtz/zstd-seekable-format-go/pkg/env"
+	"github.com/a1ex3/zstd-seekable-format-go/pkg/env"
 )
 
 type cachedFrame struct {
@@ -108,7 +107,6 @@ type readerImpl struct {
 	numFrames int64
 	endOffset int64
 
-	logger *zap.Logger
 	env    env.REnvironment
 
 	closed atomic.Bool
@@ -156,7 +154,6 @@ func NewReader(rs io.ReadSeeker, decoder ZSTDDecoder, opts ...rOption) (Reader, 
 		dec: decoder,
 	}
 
-	sr.logger = zap.NewNop()
 	for _, o := range opts {
 		err := o(&sr)
 		if err != nil {
@@ -287,8 +284,6 @@ func (r *readerImpl) read(dst []byte, off int64) (int64, int, error) {
 		size = uint64(len(dst))
 	}
 
-	r.logger.Debug("decompressed", zap.Uint64("offsetWithinFrame", offsetWithinFrame), zap.Uint64("end", offsetWithinFrame+size),
-		zap.Uint64("size", size), zap.Int("lenDecompressed", len(decompressed)), zap.Int("lenDst", len(dst)), zap.Object("index", index))
 	copy(dst, decompressed[offsetWithinFrame:offsetWithinFrame+size])
 
 	return off + int64(size), int(size), nil
@@ -332,7 +327,6 @@ func (r *readerImpl) indexFooter() (*btree.BTreeG[*env.FrameOffsetEntry], *env.F
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse footer %+v: %w", buf, err)
 	}
-	r.logger.Debug("loaded", zap.Object("footer", &footer))
 
 	r.checksums = footer.SeekTableDescriptor.ChecksumFlag
 

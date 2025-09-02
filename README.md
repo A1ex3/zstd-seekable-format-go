@@ -5,7 +5,7 @@
 This library provides a random access reader (using uncompressed file offsets) for ZSTD-compressed streams.  This can be used for creating transparent compression layers.  Coupled with Content Defined Chunking (CDC) it can also be used as a robust de-duplication layer.
 ## Installation
 
-`go get -u github.com/SaveTheRbtz/zstd-seekable-format-go/pkg`
+`go get -u github.com/a1ex3/zstd-seekable-format-go/pkg`
 
 ## Using the seekable format
 
@@ -13,7 +13,7 @@ Writing is done through the `Writer` interface:
 ```go
 import (
 	"github.com/klauspost/compress/zstd"
-	seekable "github.com/SaveTheRbtz/zstd-seekable-format-go/pkg"
+	seekable "github.com/a1ex3/zstd-seekable-format-go/pkg"
 )
 
 enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedFastest))
@@ -98,11 +98,11 @@ if !bytes.Equal(all, []byte("Hello World!")) {
 }
 ```
 
-[doc-img]: https://pkg.go.dev/badge/github.com/SaveTheRbtz/zstd-seekable-format-go
-[doc]: https://pkg.go.dev/github.com/SaveTheRbtz/zstd-seekable-format-go/pkg
-[ci-img]: https://github.com/SaveTheRbtz/zstd-seekable-format-go/actions/workflows/go.yml/badge.svg
-[ci]: https://github.com/SaveTheRbtz/zstd-seekable-format-go/actions/workflows/go.yml
-[report-img]: https://goreportcard.com/badge/SaveTheRbtz/zstd-seekable-format-go
-[report]: https://goreportcard.com/report/SaveTheRbtz/zstd-seekable-format-go
+[doc-img]: https://pkg.go.dev/badge/github.com/a1ex3/zstd-seekable-format-go
+[doc]: https://pkg.go.dev/github.com/a1ex3/zstd-seekable-format-go/pkg
+[ci-img]: https://github.com/a1ex3/zstd-seekable-format-go/actions/workflows/go.yml/badge.svg
+[ci]: https://github.com/a1ex3/zstd-seekable-format-go/actions/workflows/go.yml
+[report-img]: https://goreportcard.com/badge/github.com/a1ex3/zstd-seekable-format-go/pkg
+[report]: https://goreportcard.com/report/github.com/a1ex3/zstd-seekable-format-go/pkg
 [license-img]: https://img.shields.io/badge/License-MIT-blue.svg
 [license]: https://opensource.org/licenses/MIT

@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -83,11 +81,6 @@ type seekTableDescriptor struct {
 	ChecksumFlag bool
 }
 
-func (d *seekTableDescriptor) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddBool("ChecksumFlag", d.ChecksumFlag)
-	return nil
-}
-
 /*
 seekTableFooter is the footer of a seekable ZSTD stream.
 
@@ -120,15 +113,6 @@ func (f *seekTableFooter) MarshalBinary() ([]byte, error) {
 	dst := make([]byte, seekTableFooterOffset)
 	f.marshalBinaryInline(dst)
 	return dst, nil
-}
-
-func (f *seekTableFooter) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("NumberOfFrames", f.NumberOfFrames)
-	if err := enc.AddObject("SeekTableDescriptor", &f.SeekTableDescriptor); err != nil {
-		return err
-	}
-	enc.AddUint32("SeekableMagicNumber", f.SeekableMagicNumber)
-	return nil
 }
 
 func (f *seekTableFooter) UnmarshalBinary(p []byte) error {
@@ -180,13 +164,6 @@ func (e *seekTableEntry) MarshalBinary() ([]byte, error) {
 	dst := make([]byte, 12)
 	e.marshalBinaryInline(dst)
 	return dst, nil
-}
-
-func (e *seekTableEntry) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddUint32("CompressedSize", e.CompressedSize)
-	enc.AddUint32("DecompressedSize", e.DecompressedSize)
-	enc.AddUint32("Checksum", e.Checksum)
-	return nil
 }
 
 func (e *seekTableEntry) UnmarshalBinary(p []byte) error {
