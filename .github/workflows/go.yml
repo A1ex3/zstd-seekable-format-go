@@ -16,7 +16,7 @@ jobs:
         dir: ['pkg/v2']
     steps:
       - uses: dcarbone/install-jq-action@v3.2.0
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Setup Go ${{ matrix.go-version }}
         uses: actions/setup-go@v5
         with:
