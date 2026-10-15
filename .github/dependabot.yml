@@ -6,6 +6,6 @@ updates:
       interval: "weekly"
   - package-ecosystem: "gomod"
     directories:
-      - "/pkg/v2"
+      - "/pkg"
     schedule:
       interval: "weekly"
