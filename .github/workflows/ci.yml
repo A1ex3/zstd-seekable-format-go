@@ -21,4 +21,4 @@ jobs:
         working-directory: ./pkg/v2
         run: go test -coverprofile=coverage.out -covermode=count
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
