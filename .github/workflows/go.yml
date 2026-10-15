@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.24.4']
-        dir: ['pkg']
+        go-version: ['1.25']
+        dir: ['pkg/v2']
     steps:
       - uses: dcarbone/install-jq-action@v3.2.0
       - uses: actions/checkout@v5
@@ -30,13 +30,13 @@ jobs:
           go get .
       - name: go work
         run: |
-          if [ "${{ matrix.dir }}" == "pkg" ]; then
+          if [ "${{ matrix.dir }}" == "pkg/v2" ]; then
             echo "Skipping go workspace for ${{ matrix.dir }}"
             rm -f go.work*
             exit 0
           fi
           go work init
-          go work use pkg
+          go work use pkg/v2
           go work use ${{ matrix.dir }}
       - name: Build (${{ matrix.dir }})
         working-directory: ./${{ matrix.dir }}

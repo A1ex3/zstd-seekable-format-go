@@ -1,0 +1,197 @@
+package seekable
+
+import (
+	"testing"
+)
+
+var seekTableBenchmarkSizes = []struct {
+	name       string
+	frameCount int
+}{
+	{name: "16K", frameCount: 16 << 10},
+	{name: "128K", frameCount: 128 << 10},
+	{name: "1M", frameCount: 1 << 20},
+}
+
+var (
+	benchmarkSeekTableSink *SeekTable
+	benchmarkEntrySink     FrameOffsetEntry
+	benchmarkBoolSink      bool
+	benchmarkIntSink       int64
+)
+
+func benchmarkSeekTable(b testing.TB, frameCount int) []byte {
+	b.Helper()
+
+	entrySize := int(seekTableEntrySize(true))
+	seekTable := make([]byte, frameCount*entrySize+seekTableFooterOffset)
+	entry := seekTableEntry{CompressedSize: 1, DecompressedSize: 1}
+	for i := 0; i < frameCount; i++ {
+		entry.marshalBinaryInline(seekTable[i*entrySize : (i+1)*entrySize])
+	}
+
+	footer := seekTableFooter{
+		NumberOfFrames: uint32(frameCount),
+		SeekTableDescriptor: seekTableDescriptor{
+			ChecksumFlag: true,
+		},
+		SeekableMagicNumber: seekableMagicNumber,
+	}
+	footer.marshalBinaryInline(seekTable[frameCount*entrySize:])
+
+	frame, err := createSkippableFrame(seekableTag, seekTable)
+	if err != nil {
+		b.Fatal(err)
+	}
+	return frame
+}
+
+func benchmarkParsedSeekTable(b *testing.B, frameCount int) *SeekTable {
+	b.Helper()
+
+	seekTable := benchmarkSeekTable(b, frameCount)
+	table, err := NewSeekTable(seekTable)
+	if err != nil {
+		b.Fatal(err)
+	}
+	return table
+}
+
+func BenchmarkSeekTableIndexBuild(b *testing.B) {
+	for _, benchmarkSize := range seekTableBenchmarkSizes {
+		b.Run(benchmarkSize.name, func(b *testing.B) {
+			seekTable := benchmarkSeekTable(b, benchmarkSize.frameCount)
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				table, err := NewSeekTable(seekTable)
+				if err != nil {
+					b.Fatal(err)
+				}
+				benchmarkSeekTableSink = table
+			}
+		})
+	}
+}
+
+func BenchmarkSeekTableEntryByDecompressedOffset(b *testing.B) {
+	for _, benchmarkSize := range seekTableBenchmarkSizes {
+		b.Run(benchmarkSize.name, func(b *testing.B) {
+			table := benchmarkParsedSeekTable(b, benchmarkSize.frameCount)
+
+			cases := []struct {
+				name string
+				off  uint64
+			}{
+				{name: "First", off: 0},
+				{name: "Middle", off: uint64(benchmarkSize.frameCount / 2)},
+				{name: "Last", off: uint64(benchmarkSize.frameCount - 1)},
+				{name: "MissPastEnd", off: uint64(benchmarkSize.frameCount)},
+			}
+
+			for _, tc := range cases {
+				b.Run(tc.name, func(b *testing.B) {
+					b.ReportAllocs()
+					b.ResetTimer()
+					for i := 0; i < b.N; i++ {
+						benchmarkEntrySink, benchmarkBoolSink = table.EntryByDecompressedOffset(tc.off)
+					}
+				})
+			}
+
+			b.Run("Sequential", func(b *testing.B) {
+				var ids int64
+				mask := uint64(benchmarkSize.frameCount - 1)
+
+				b.ReportAllocs()
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					index, ok := table.EntryByDecompressedOffset(uint64(i) & mask)
+					if ok {
+						ids += index.ID
+					}
+				}
+				benchmarkIntSink = ids
+			})
+
+			b.Run("PseudoRandom", func(b *testing.B) {
+				var ids int64
+				x := uint64(1)
+				mask := uint64(benchmarkSize.frameCount - 1)
+
+				b.ReportAllocs()
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					x = x*6364136223846793005 + 1
+					index, ok := table.EntryByDecompressedOffset(x & mask)
+					if ok {
+						ids += index.ID
+					}
+				}
+				benchmarkIntSink = ids
+			})
+		})
+	}
+}
+
+func BenchmarkSeekTableEntryByID(b *testing.B) {
+	for _, benchmarkSize := range seekTableBenchmarkSizes {
+		b.Run(benchmarkSize.name, func(b *testing.B) {
+			table := benchmarkParsedSeekTable(b, benchmarkSize.frameCount)
+
+			cases := []struct {
+				name string
+				id   int64
+			}{
+				{name: "First", id: 0},
+				{name: "Middle", id: int64(benchmarkSize.frameCount / 2)},
+				{name: "Last", id: int64(benchmarkSize.frameCount - 1)},
+				{name: "MissNegative", id: -1},
+				{name: "MissPastEnd", id: int64(benchmarkSize.frameCount)},
+			}
+
+			for _, tc := range cases {
+				b.Run(tc.name, func(b *testing.B) {
+					b.ReportAllocs()
+					b.ResetTimer()
+					for i := 0; i < b.N; i++ {
+						benchmarkEntrySink, benchmarkBoolSink = table.EntryByID(tc.id)
+					}
+				})
+			}
+
+			b.Run("Sequential", func(b *testing.B) {
+				var ids int64
+				mask := int64(benchmarkSize.frameCount - 1)
+
+				b.ReportAllocs()
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					index, ok := table.EntryByID(int64(i) & mask)
+					if ok {
+						ids += index.ID
+					}
+				}
+				benchmarkIntSink = ids
+			})
+
+			b.Run("PseudoRandom", func(b *testing.B) {
+				var ids int64
+				x := uint64(1)
+				mask := uint64(benchmarkSize.frameCount - 1)
+
+				b.ReportAllocs()
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					x = x*6364136223846793005 + 1
+					index, ok := table.EntryByID(int64(x & mask))
+					if ok {
+						ids += index.ID
+					}
+				}
+				benchmarkIntSink = ids
+			})
+		})
+	}
+}

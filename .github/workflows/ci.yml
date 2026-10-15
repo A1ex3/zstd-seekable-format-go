@@ -15,10 +15,10 @@ jobs:
           fetch-depth: 100
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24.4'
+          go-version: '1.25'
           check-latest: true
       - name: Run coverage
-        working-directory: ./pkg
+        working-directory: ./pkg/v2
         run: go test -coverprofile=coverage.out -covermode=count
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

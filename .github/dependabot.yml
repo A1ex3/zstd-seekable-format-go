@@ -6,7 +6,6 @@ updates:
       interval: "weekly"
   - package-ecosystem: "gomod"
     directories:
-      - "/pkg"
-      - "/cmd/zstdseek"
+      - "/pkg/v2"
     schedule:
       interval: "weekly"
